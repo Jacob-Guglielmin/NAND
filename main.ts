@@ -89,6 +89,33 @@ function addChip(type: ChipType): ChipID {
     return nextID;
 }
 
+function deleteChip(chipID: ChipID): void {
+    const chip = getChip(chipID);
+
+    if (chip.type === INPUT.type) {
+        inputChips.splice(inputChips.indexOf(chipID), 1);
+    } else if (chip.type === OUTPUT.type) {
+        outputChips.splice(outputChips.indexOf(chipID), 1);
+    }
+
+    for (let i = 0; i < chip.outputPins.length; i++) {
+        for (let j = 0; j < chip.outputPins[i].length; j++) {
+            disconnect({ chipID, pinID: i, isOutput: true }, chip.outputPins[i][j]);
+        }
+    }
+
+    for (let i = 0; i < chip.inputPins.length; i++) {
+        if (chip.inputPins[i] !== null) {
+            disconnect(chip.inputPins[i]!, { chipID, pinID: i, isOutput: false });
+        }
+    }
+
+    chips.delete(chipID);
+    wires.delete(chipID);
+
+    render();
+}
+
 function getChip(chipID: ChipID): Chip {
     if (!chips.has(chipID)) throw new Error("Chip does not exist");
 
@@ -107,6 +134,8 @@ function connect(from: Pin, to: Pin): void {
 }
 
 function disconnect(from: Pin, to: Pin): void {
+    deleteWire(from, to);
+
     const chip = getChip(from.chipID);
 
     chip.outputPins[from.pinID] = chip.outputPins[from.pinID].filter(

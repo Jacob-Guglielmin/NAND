@@ -147,6 +147,14 @@ function render(): void {
     }
 }
 
+function deleteWire(fromOutput: Pin, toInput: Pin) {
+    for (let [outputPin, wiresFromPin] of wires.get(fromOutput.chipID)!.entries()) {
+        wires.get(fromOutput.chipID)![outputPin] = wiresFromPin.filter(
+            (x) => x.toInput?.chipID !== toInput.chipID || x.toInput?.pinID !== toInput.pinID
+        );
+    }
+}
+
 function chipUnder(position: XY): ChipID | null {
     for (const [id, chip] of chips) {
         if (
@@ -249,16 +257,7 @@ canvas.addEventListener("mousedown", (e) => {
             }
 
             let incomingFrom = getChip(currentWirePath!.toInput!.chipID).inputPins[currentWirePath!.toInput!.pinID];
-            if (incomingFrom !== null) {
-                for (let [outputPin, wiresFromPin] of wires.get(incomingFrom.chipID)!.entries()) {
-                    wires.get(incomingFrom.chipID)![outputPin] = wiresFromPin.filter(
-                        (x) =>
-                            x.toInput?.chipID !== currentWirePath!.toInput!.chipID ||
-                            x.toInput?.pinID !== currentWirePath!.toInput!.pinID
-                    );
-                }
-                disconnect(incomingFrom, currentWirePath!.toInput!);
-            }
+            if (incomingFrom !== null) disconnect(incomingFrom, currentWirePath!.toInput!);
 
             wires.get(currentWirePath!.fromOutput!.chipID)![currentWirePath!.fromOutput!.pinID].push(currentWirePath!);
             connect(currentWirePath!.fromOutput!, currentWirePath!.toInput!);
@@ -392,13 +391,6 @@ document.addEventListener("keydown", (e) => {
         }
     } else if (e.key === "Backspace" || e.key === "Delete") {
         if (hoveredWire !== null) {
-            for (let [outputPin, wiresFromPin] of wires.get(hoveredWire.fromOutput?.chipID!)!.entries()) {
-                wires.get(hoveredWire.fromOutput?.chipID!)![outputPin] = wiresFromPin.filter(
-                    (x) =>
-                        x.toInput?.chipID !== hoveredWire!.toInput?.chipID ||
-                        x.toInput?.pinID !== hoveredWire!.toInput?.pinID
-                );
-            }
             disconnect(hoveredWire.fromOutput!, hoveredWire.toInput!);
             hoveredWire = null;
         }
