@@ -54,12 +54,10 @@ const outputChips: ChipID[] = [];
 const chips: Map<ChipID, Chip> = new Map();
 let nextID: ChipID = 0 as ChipID;
 
-const definedChips: ChipType[] = [INPUT, OUTPUT, NAND];
-
 let oscillators: Set<string> = new Set();
 let recheckOscillators: ChipID[] = [];
 
-function addChip(type: ChipType): ChipID {
+function addChip(type: ChipType, position: XY): ChipID {
     if (type.outputs !== 0 && type.initialOutput === undefined)
         throw new Error("Initial output must be defined for chips with outputs");
 
@@ -70,7 +68,7 @@ function addChip(type: ChipType): ChipID {
         outputs: new Array(type.outputs).fill(type.initialOutput),
         inputPins: new Array(type.inputs).fill(null),
         outputPins: new Array(type.outputs).fill(undefined).map(() => []),
-        position: { x: 0, y: 0 }
+        position
     });
 
     wires.set(

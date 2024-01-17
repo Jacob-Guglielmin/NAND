@@ -16,6 +16,9 @@ const PIN_RADIUS = 7;
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+const buttonDiv = document.getElementById("buttons") as HTMLDivElement;
+const placementAlert = document.getElementById("placementAlert") as HTMLDivElement;
+const placementAlertChip = document.getElementById("placementAlertChip") as HTMLSpanElement;
 
 ctx.canvas.width = Math.round(document.body.getBoundingClientRect().width);
 ctx.canvas.height = Math.round(document.body.getBoundingClientRect().height * 0.84);
@@ -56,10 +59,34 @@ function insertAddChipButton(chipType: ChipType): void {
     const addChipButton = document.createElement("button");
     addChipButton.innerText = chipType.type;
     addChipButton.addEventListener("click", () => {
-        addChip(chipType);
+        placingChip = true;
+        placingChipType = chipType;
+
+        selectedChip = null;
+        chipOffset = null;
+        selectedPin = null;
+        currentWirePath = null;
+
+        setFooter(false, chipType.type);
+
         render();
     });
-    document.getElementById("footer")!.appendChild(addChipButton);
+    buttonDiv.appendChild(addChipButton);
+}
+
+function setFooter(buttonsVisible: boolean, chipNamePlacing?: string): void {
+    if (buttonsVisible) {
+        buttonDiv.classList.remove("hidden");
+        placementAlert.classList.add("hidden");
+    } else {
+        if (chipNamePlacing == undefined) {
+            throw new Error("Chip name placing is undefined");
+        }
+        placementAlertChip.innerText = chipNamePlacing;
+
+        buttonDiv.classList.add("hidden");
+        placementAlert.classList.remove("hidden");
+    }
 }
 
 function drawChip(chip: Chip): void {
@@ -214,6 +241,9 @@ let mouseDown = false;
 let mouseDownPosition: XY | null = null;
 let dragged = false;
 
+let placingChip = false;
+let placingChipType: ChipType | null = null;
+
 let selectedChip: ChipID | null = null;
 let chipOffset: XY | null = null;
 
@@ -235,6 +265,18 @@ canvas.addEventListener("mousedown", (e) => {
         x: mousePosition.x,
         y: mousePosition.y
     };
+
+    if (placingChip) {
+        addChip(placingChipType!, {
+            x: clamp(mousePosition.x - CHIP_WIDTH / 2, 0, ctx.canvas.width - CHIP_WIDTH),
+            y: clamp(mousePosition.y - CHIP_HEIGHT / 2, 0, ctx.canvas.height - CHIP_HEIGHT)
+        });
+        placingChip = false;
+        placingChipType = null;
+        setFooter(true);
+        render();
+        return;
+    }
 
     hoveredPin = pinUnder(mousePosition);
     if (hoveredPin !== null) {
@@ -311,6 +353,8 @@ canvas.addEventListener("mousemove", (e) => {
     hoveredWire = null;
     hoveredChip = null;
 
+    if (placingChip) return;
+
     if (mouseDown && selectedChip !== null) {
         if (!dragged && mouseDownPosition !== null) {
             if (euclideanDistance(mousePosition, mouseDownPosition) > 5) {
@@ -383,6 +427,13 @@ canvas.addEventListener("mousemove", (e) => {
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+        if (placingChip) {
+            placingChip = false;
+            placingChipType = null;
+            setFooter(true);
+            render();
+            return;
+        }
         if (selectedPin !== null) {
             selectedPin = null;
             currentWirePath = null;
