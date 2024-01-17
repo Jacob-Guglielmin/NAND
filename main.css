@@ -3,3 +3,21 @@ body {
     overflow: hidden;
     background-color: #262626;
 }
+
+#header {
+    height: 8vh;
+    width: 100vw;
+    background: #1c1c1c;
+}
+
+#canvas {
+    width: 100vw;
+    height: 84vh;
+    display: block;
+}
+
+#footer {
+    height: 8vh;
+    width: 100vw;
+    background: #1c1c1c;
+}

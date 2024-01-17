@@ -1,8 +1,3 @@
-type XY = {
-    x: number;
-    y: number;
-};
-
 type Wire = {
     fromOutput?: Pin;
     path: XY[];
@@ -22,8 +17,8 @@ const PIN_RADIUS = 7;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-ctx.canvas.width = window.innerWidth;
-ctx.canvas.height = window.innerHeight;
+ctx.canvas.width = Math.round(document.body.getBoundingClientRect().width);
+ctx.canvas.height = Math.round(document.body.getBoundingClientRect().height * 0.84);
 
 const wires: Map<ChipID, Wire[][]> = new Map();
 
@@ -190,25 +185,6 @@ function pinUnder(position: XY): Pin | null {
     return null;
 }
 
-function sqr(x: number): number {
-    return x * x;
-}
-function dist2(v: XY, w: XY) {
-    return sqr(v.x - w.x) + sqr(v.y - w.y);
-}
-function distPointToLineSegment(point: XY, lineStart: XY, lineEnd: XY): number {
-    var l2 = dist2(lineStart, lineEnd);
-    if (l2 == 0) return dist2(point, lineStart);
-    var t =
-        ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) /
-        l2;
-    t = Math.max(0, Math.min(1, t));
-    return dist2(point, {
-        x: lineStart.x + t * (lineEnd.x - lineStart.x),
-        y: lineStart.y + t * (lineEnd.y - lineStart.y)
-    });
-}
-
 function wireUnder(position: XY): Wire | null {
     for (const [chipID, wiresOut] of wires) {
         for (let [outputPin, wiresFromPin] of wiresOut.entries()) {
@@ -244,8 +220,14 @@ let hoveredChip: ChipID | null = null;
 
 canvas.addEventListener("mousedown", (e) => {
     mouseDown = true;
-    mousePosition = { x: e.clientX, y: e.clientY };
-    mouseDownPosition = { x: e.clientX, y: e.clientY };
+    mousePosition = {
+        x: e.clientX - ctx.canvas.getBoundingClientRect().left,
+        y: e.clientY - ctx.canvas.getBoundingClientRect().top
+    };
+    mouseDownPosition = {
+        x: e.clientX - ctx.canvas.getBoundingClientRect().left,
+        y: e.clientY - ctx.canvas.getBoundingClientRect().top
+    };
 
     hoveredPin = pinUnder(mousePosition);
     if (hoveredPin !== null) {
@@ -313,7 +295,10 @@ canvas.addEventListener("mouseup", () => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
-    mousePosition = { x: e.clientX, y: e.clientY };
+    mousePosition = {
+        x: e.clientX - ctx.canvas.getBoundingClientRect().left,
+        y: e.clientY - ctx.canvas.getBoundingClientRect().top
+    };
     hoveredPin = null;
     hoveredWire = null;
     hoveredChip = null;
@@ -328,8 +313,8 @@ canvas.addEventListener("mousemove", (e) => {
         if (dragged) {
             const chip = getChip(selectedChip);
 
-            chip.position.x = e.clientX - chipOffset!.x;
-            chip.position.y = e.clientY - chipOffset!.y;
+            chip.position.x = clamp(mousePosition.x - chipOffset!.x, 0, ctx.canvas.width - CHIP_WIDTH);
+            chip.position.y = clamp(mousePosition.y - chipOffset!.y, 0, ctx.canvas.height - CHIP_HEIGHT);
 
             render();
         }
