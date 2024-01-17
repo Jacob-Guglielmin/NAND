@@ -11,6 +11,10 @@ function dist2(v: XY, w: XY) {
     return sqr(v.x - w.x) + sqr(v.y - w.y);
 }
 
+function euclideanDistance(a: XY, b: XY): number {
+    return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+}
+
 function distPointToLineSegment(point: XY, lineStart: XY, lineEnd: XY): number {
     var l2 = dist2(lineStart, lineEnd);
     if (l2 == 0) return dist2(point, lineStart);

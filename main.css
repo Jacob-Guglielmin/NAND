@@ -20,4 +20,21 @@ body {
     height: 8vh;
     width: 100vw;
     background: #1c1c1c;
+    overflow-x: auto;
+    padding: 1vh;
+}
+
+#footer > button {
+    height: 80%;
+    background-color: #555555;
+    border: none;
+    color: #ffffff;
+    font-size: 3vh;
+    padding: 1vh;
+}
+#footer > button:not(:last-child) {
+    margin-right: 1vh;
+}
+#footer > button:hover {
+    background-color: #666666;
 }

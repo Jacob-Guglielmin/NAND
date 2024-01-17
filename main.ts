@@ -210,28 +210,8 @@ function simulate(fromChip: ChipID): void {
     render();
 }
 
-addChip(INPUT);
-addChip(INPUT);
-addChip(INPUT);
-
-addChip(NAND);
-addChip(NAND);
-addChip(NAND);
-addChip(NAND);
-
-addChip(OUTPUT);
-
-/*connect({ chipID: 0, pinID: 0 }, { chipID: 3, pinID: 0 });
-connect({ chipID: 2, pinID: 0 }, { chipID: 4, pinID: 1 });
-connect({ chipID: 1, pinID: 0 }, { chipID: 3, pinID: 1 });
-connect({ chipID: 1, pinID: 0 }, { chipID: 4, pinID: 0 });
-
-connect({ chipID: 3, pinID: 0 }, { chipID: 5, pinID: 0 });
-connect({ chipID: 4, pinID: 0 }, { chipID: 6, pinID: 1 });
-
-connect({ chipID: 5, pinID: 0 }, { chipID: 6, pinID: 0 });
-connect({ chipID: 6, pinID: 0 }, { chipID: 5, pinID: 1 });
-
-connect({ chipID: 5, pinID: 0 }, { chipID: 7, pinID: 0 });*/
+insertAddChipButton(INPUT);
+insertAddChipButton(OUTPUT);
+insertAddChipButton(NAND);
 
 render();
