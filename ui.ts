@@ -74,7 +74,7 @@ function insertAddChipButton(chipType: ChipType): void {
     buttonDiv.appendChild(addChipButton);
 }
 
-function setFooter(buttonsVisible: boolean, chipNamePlacing?: string): void {
+function setFooter(buttonsVisible: boolean, chipNamePlacing?: ChipTypeID): void {
     if (buttonsVisible) {
         buttonDiv.classList.remove("hidden");
         placementAlert.classList.add("hidden");

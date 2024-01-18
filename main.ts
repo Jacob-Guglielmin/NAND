@@ -1,48 +1,61 @@
 type Pin = {
-    chipID: ChipID;
-    pinID: number;
-    isOutput: boolean;
+    readonly chipID: ChipID;
+    readonly pinID: number;
+    readonly isOutput: boolean;
 };
 
 type ChipID = number & { __chipID: never };
+type ChipTypeID = string & { __chipTypeID: never };
 
 type Chip = {
-    id: ChipID;
-    type: string;
-    inputs: boolean[];
-    outputs: boolean[];
-    inputPins: (Pin | null)[];
-    outputPins: Pin[][];
+    readonly id: ChipID;
+    readonly type: ChipTypeID;
+    readonly inputs: boolean[];
+    readonly outputs: boolean[];
+    // Represents the pin that the input is connected to. THIS WILL BE AN OUTPUT PIN OF ANOTHER CHIP
+    readonly inputPins: (Pin | null)[];
+    // Represents the pins that the output is connected to. THESE WILL BE INPUT PINS OF OTHER CHIPS
+    readonly outputPins: Pin[][];
 
     position: XY;
 };
 
 type ChipType = {
-    type: string;
-    inputs: number;
-    outputs: number;
-    initialOutput?: boolean;
+    readonly type: ChipTypeID;
+    readonly inputs: number;
+    readonly outputs: number;
+    readonly initialOutput?: boolean;
+    readonly pure: boolean;
 };
 
 const INPUT: ChipType = {
-    type: "INPUT",
+    type: "INPUT" as ChipTypeID,
     inputs: 0,
     outputs: 1,
-    initialOutput: false
+    initialOutput: false,
+    pure: true
 };
 
 const OUTPUT: ChipType = {
-    type: "OUTPUT",
+    type: "OUTPUT" as ChipTypeID,
     inputs: 1,
-    outputs: 0
+    outputs: 0,
+    pure: true
 };
 
 const NAND: ChipType = {
-    type: "NAND",
+    type: "NAND" as ChipTypeID,
     inputs: 2,
     outputs: 1,
-    initialOutput: true
+    initialOutput: true,
+    pure: true
 };
+
+const chipTypes: Map<ChipTypeID, ChipType> = new Map([
+    [INPUT.type, INPUT],
+    [OUTPUT.type, OUTPUT],
+    [NAND.type, NAND]
+]);
 
 const nand = (a: boolean, b: boolean): boolean => !(a && b);
 
