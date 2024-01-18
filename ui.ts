@@ -91,7 +91,7 @@ function setFooter(buttonsVisible: boolean, chipNamePlacing?: ChipTypeID): void 
 
 function drawChip(chip: Chip): void {
     // Chip body
-    ctx.fillStyle = "blue";
+    ctx.fillStyle = hoveredChip == chip.id || selectedChip == chip.id ? "#3333ff" : "#0000ff";
     ctx.fillRect(chip.position.x, chip.position.y, CHIP_WIDTH, CHIP_HEIGHT);
 
     // Chip name
@@ -171,6 +171,53 @@ function drawWires(): void {
             }
         }
     }
+
+    if (selectedPin !== null && currentWirePath !== null) {
+        let fullPath: XY[];
+        if (!selectedPin.isOutput) {
+            ctx.strokeStyle = WIRE_OFF_COLOR;
+
+            fullPath = [mousePosition].concat(currentWirePath!.path, pinPosition(selectedPin));
+        } else {
+            ctx.strokeStyle = oscillators.has(
+                JSON.stringify({ chipID: selectedPin.chipID, pinID: selectedPin.pinID, isOutput: true })
+            )
+                ? WIRE_ERROR_COLOR
+                : getChip(selectedPin.chipID).outputs[selectedPin.pinID]
+                ? WIRE_ON_COLOR
+                : WIRE_OFF_COLOR;
+
+            fullPath = [pinPosition(selectedPin)].concat(currentWirePath!.path, mousePosition);
+        }
+
+        ctx.lineWidth = WIRE_WIDTH;
+        ctx.beginPath();
+        ctx.moveTo(fullPath[0].x, fullPath[0].y);
+
+        for (let point of fullPath.slice(1)) {
+            ctx.lineTo(point.x, point.y);
+        }
+
+        ctx.stroke();
+    }
+}
+
+function chooseCursorAppearance(): void {
+    if (placingChip) {
+        ctx.canvas.style.cursor = "pointer";
+    } else if (mouseDown && selectedChip !== null) {
+        ctx.canvas.style.cursor = dragged || getChip(selectedChip).type != INPUT.type ? "grabbing" : "pointer";
+    } else if (hoveredPin !== null) {
+        ctx.canvas.style.cursor = "pointer";
+    } else if (selectedPin !== null) {
+        ctx.canvas.style.cursor = "crosshair";
+    } else if (hoveredWire !== null) {
+        ctx.canvas.style.cursor = "pointer";
+    } else if (hoveredChip !== null) {
+        ctx.canvas.style.cursor = getChip(hoveredChip).type != INPUT.type ? "grab" : "pointer";
+    } else {
+        ctx.canvas.style.cursor = "default";
+    }
 }
 
 function render(): void {
@@ -181,6 +228,8 @@ function render(): void {
     for (let chipID of Array.from(chips.keys()).reverse()) {
         drawChip(getChip(chipID));
     }
+
+    chooseCursorAppearance();
 }
 
 function chipUnder(position: XY): ChipID | null {
@@ -254,12 +303,12 @@ let hoveredPin: Pin | null = null;
 let hoveredWire: Wire | null = null;
 let hoveredChip: ChipID | null = null;
 
-canvas.addEventListener("mousedown", (e) => {
+function mouseDownHandler(eventPosition: XY): void {
     mouseDown = true;
     const rect = ctx.canvas.getBoundingClientRect();
     mousePosition = {
-        x: (e.clientX - rect.left) * (ctx.canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
+        x: (eventPosition.x - rect.left) * (ctx.canvas.width / rect.width),
+        y: (eventPosition.y - rect.top) * (ctx.canvas.height / rect.height)
     };
     mouseDownPosition = {
         x: mousePosition.x,
@@ -274,7 +323,6 @@ canvas.addEventListener("mousedown", (e) => {
         placingChip = false;
         placingChipType = null;
         setFooter(true);
-        render();
         return;
     }
 
@@ -325,9 +373,9 @@ canvas.addEventListener("mousedown", (e) => {
         };
         return;
     }
-});
+}
 
-canvas.addEventListener("mouseup", () => {
+function mouseUpHandler(): void {
     mouseDown = false;
     if (selectedChip === null) return;
 
@@ -341,13 +389,13 @@ canvas.addEventListener("mouseup", () => {
     dragged = false;
     selectedChip = null;
     chipOffset = null;
-});
+}
 
-canvas.addEventListener("mousemove", (e) => {
+function mouseMoveHandler(eventPosition: XY): void {
     const rect = ctx.canvas.getBoundingClientRect();
     mousePosition = {
-        x: (e.clientX - rect.left) * (ctx.canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (ctx.canvas.height / rect.height)
+        x: (eventPosition.x - rect.left) * (ctx.canvas.width / rect.width),
+        y: (eventPosition.y - rect.top) * (ctx.canvas.height / rect.height)
     };
     hoveredPin = null;
     hoveredWire = null;
@@ -362,13 +410,10 @@ canvas.addEventListener("mousemove", (e) => {
             }
         }
 
+        const chip = getChip(selectedChip);
         if (dragged) {
-            const chip = getChip(selectedChip);
-
             chip.position.x = clamp(mousePosition.x - chipOffset!.x, 0, ctx.canvas.width - CHIP_WIDTH);
             chip.position.y = clamp(mousePosition.y - chipOffset!.y, 0, ctx.canvas.height - CHIP_HEIGHT);
-
-            render();
         }
 
         return;
@@ -376,73 +421,53 @@ canvas.addEventListener("mousemove", (e) => {
 
     hoveredPin = pinUnder(mousePosition);
 
-    if (selectedPin !== null) {
-        render();
-
-        let fullPath: XY[];
-        if (!selectedPin.isOutput) {
-            ctx.strokeStyle = WIRE_OFF_COLOR;
-
-            fullPath = [mousePosition].concat(currentWirePath!.path, pinPosition(selectedPin));
-        } else {
-            ctx.strokeStyle = oscillators.has(
-                JSON.stringify({ chipID: selectedPin.chipID, pinID: selectedPin.pinID, isOutput: true })
-            )
-                ? WIRE_ERROR_COLOR
-                : getChip(selectedPin.chipID).outputs[selectedPin.pinID]
-                ? WIRE_ON_COLOR
-                : WIRE_OFF_COLOR;
-
-            fullPath = [pinPosition(selectedPin)].concat(currentWirePath!.path, mousePosition);
-        }
-
-        ctx.lineWidth = WIRE_WIDTH;
-        ctx.beginPath();
-        ctx.moveTo(fullPath[0].x, fullPath[0].y);
-
-        for (let point of fullPath.slice(1)) {
-            ctx.lineTo(point.x, point.y);
-        }
-
-        ctx.stroke();
-
-        return;
-    }
-
-    if (hoveredPin !== null) {
-        render();
-        return;
-    }
+    if (hoveredPin !== null || selectedPin !== null) return;
 
     hoveredWire = wireUnder(mousePosition);
-    if (hoveredWire !== null) {
-        render();
-        return;
-    }
+    if (hoveredWire !== null) return;
 
     hoveredChip = chipUnder(mousePosition);
+}
 
-    render();
-});
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
+function keyDownHandler(key: string): void {
+    if (key === "Escape") {
         if (placingChip) {
             placingChip = false;
             placingChipType = null;
             setFooter(true);
-            render();
-            return;
-        }
-        if (selectedPin !== null) {
+        } else if (selectedPin !== null) {
             selectedPin = null;
             currentWirePath = null;
-            render();
         }
-    } else if (e.key === "Backspace" || e.key === "Delete") {
+    } else if (key === "Backspace" || key === "Delete") {
         if (hoveredWire !== null) {
             disconnect(hoveredWire.fromOutput!, hoveredWire.toInput!);
             hoveredWire = null;
+        } else if (hoveredChip !== null) {
+            deleteChip(hoveredChip);
+            hoveredChip = null;
         }
     }
+}
+
+canvas.addEventListener("mousedown", (e) => {
+    mouseDownHandler({ x: e.clientX, y: e.clientY });
+    mouseMoveHandler({ x: e.clientX, y: e.clientY });
+    render();
 });
+canvas.addEventListener("mouseup", (e) => {
+    mouseUpHandler();
+    mouseMoveHandler({ x: e.clientX, y: e.clientY });
+    render();
+});
+canvas.addEventListener("mousemove", (e) => {
+    mouseMoveHandler({ x: e.clientX, y: e.clientY });
+    render();
+});
+document.addEventListener("keydown", (e) => {
+    keyDownHandler(e.key);
+    mouseMoveHandler(mousePosition);
+    render();
+});
+
+// TODO low opacity render of chip being placed

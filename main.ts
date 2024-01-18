@@ -123,16 +123,14 @@ function deleteChip(chipID: ChipID): void {
 
     chips.delete(chipID);
     wires.delete(chipID);
-
-    render();
 }
 
 function getChip(chipID: ChipID): Chip {
-    if (!chips.has(chipID)) throw new Error("Chip does not exist");
+    if (!chips.has(chipID)) throw new Error("Chip " + chipID + " does not exist");
 
     const chip = chips.get(chipID);
 
-    if (chip === undefined) throw new Error("Chip is undefined");
+    if (chip === undefined) throw new Error("Chip " + chipID + " is undefined");
 
     return chip;
 }
@@ -159,10 +157,14 @@ function disconnect(from: Pin, to: Pin): void {
     simulate(to.chipID);
 }
 
-function setInput(inputID: number, value: boolean): void {
-    getChip(inputChips[inputID]).outputs[0] = value;
+function setInput(chipID: ChipID, value: boolean): void {
+    let chip = getChip(chipID);
 
-    simulate(inputChips[inputID]);
+    if (chip.type !== INPUT.type) throw new Error("Chip " + chipID + " is not an input");
+
+    chip.outputs[0] = value;
+
+    simulate(chipID);
 }
 
 function simulate(fromChip: ChipID): void {
@@ -217,12 +219,8 @@ function simulate(fromChip: ChipID): void {
     } else {
         recheckOscillators = [];
     }
-
-    render();
 }
 
 insertAddChipButton(INPUT);
 insertAddChipButton(OUTPUT);
 insertAddChipButton(NAND);
-
-render();
