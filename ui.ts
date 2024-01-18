@@ -61,6 +61,7 @@ function insertAddChipButton(chipType: ChipType): void {
     addChipButton.addEventListener("click", () => {
         placingChip = true;
         placingChipType = chipType;
+        placingChipID = addChip(chipType, { x: 0, y: 0 });
 
         selectedChip = null;
         chipOffset = null;
@@ -226,7 +227,15 @@ function render(): void {
     drawWires();
 
     for (let chipID of Array.from(chips.keys()).reverse()) {
-        drawChip(getChip(chipID));
+        if (chipID !== placingChipID) {
+            drawChip(getChip(chipID));
+        }
+    }
+
+    if (placingChipID !== null && mouseOverCanvas) {
+        ctx.globalAlpha = 0.5;
+        drawChip(getChip(placingChipID));
+        ctx.globalAlpha = 1;
     }
 
     chooseCursorAppearance();
@@ -289,9 +298,11 @@ let mousePosition: XY = { x: 0, y: 0 };
 let mouseDown = false;
 let mouseDownPosition: XY | null = null;
 let dragged = false;
+let mouseOverCanvas = false;
 
 let placingChip = false;
 let placingChipType: ChipType | null = null;
+let placingChipID: ChipID | null = null;
 
 let selectedChip: ChipID | null = null;
 let chipOffset: XY | null = null;
@@ -316,12 +327,9 @@ function mouseDownHandler(eventPosition: XY): void {
     };
 
     if (placingChip) {
-        addChip(placingChipType!, {
-            x: clamp(mousePosition.x - CHIP_WIDTH / 2, 0, ctx.canvas.width - CHIP_WIDTH),
-            y: clamp(mousePosition.y - CHIP_HEIGHT / 2, 0, ctx.canvas.height - CHIP_HEIGHT)
-        });
         placingChip = false;
         placingChipType = null;
+        placingChipID = null;
         setFooter(true);
         return;
     }
@@ -401,7 +409,15 @@ function mouseMoveHandler(eventPosition: XY): void {
     hoveredWire = null;
     hoveredChip = null;
 
-    if (placingChip) return;
+    if (placingChip) {
+        getChip(placingChipID!).position.x = clamp(mousePosition.x - CHIP_WIDTH / 2, 0, ctx.canvas.width - CHIP_WIDTH);
+        getChip(placingChipID!).position.y = clamp(
+            mousePosition.y - CHIP_HEIGHT / 2,
+            0,
+            ctx.canvas.height - CHIP_HEIGHT
+        );
+        return;
+    }
 
     if (mouseDown && selectedChip !== null) {
         if (!dragged && mouseDownPosition !== null) {
@@ -432,7 +448,9 @@ function mouseMoveHandler(eventPosition: XY): void {
 function keyDownHandler(key: string): void {
     if (key === "Escape") {
         if (placingChip) {
+            deleteChip(placingChipID!);
             placingChip = false;
+            placingChipID = null;
             placingChipType = null;
             setFooter(true);
         } else if (selectedPin !== null) {
@@ -464,10 +482,15 @@ canvas.addEventListener("mousemove", (e) => {
     mouseMoveHandler({ x: e.clientX, y: e.clientY });
     render();
 });
+canvas.addEventListener("mouseenter", () => {
+    mouseOverCanvas = true;
+});
+canvas.addEventListener("mouseleave", () => {
+    mouseOverCanvas = false;
+    render();
+});
 document.addEventListener("keydown", (e) => {
     keyDownHandler(e.key);
     mouseMoveHandler(mousePosition);
     render();
 });
-
-// TODO low opacity render of chip being placed

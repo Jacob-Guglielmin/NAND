@@ -95,9 +95,7 @@ function addChip(type: ChipType, position: XY): ChipID {
         outputChips.push(nextID);
     }
 
-    nextID++;
-
-    return nextID;
+    return nextID++ as ChipID;
 }
 
 function deleteChip(chipID: ChipID): void {
