@@ -25,30 +25,26 @@ type ChipType = {
     readonly inputs: number;
     readonly outputs: number;
     readonly initialOutput?: boolean;
-    readonly pure: boolean;
 };
 
 const INPUT: ChipType = {
     type: "INPUT" as ChipTypeID,
     inputs: 0,
     outputs: 1,
-    initialOutput: false,
-    pure: true
+    initialOutput: false
 };
 
 const OUTPUT: ChipType = {
     type: "OUTPUT" as ChipTypeID,
     inputs: 1,
-    outputs: 0,
-    pure: true
+    outputs: 0
 };
 
 const NAND: ChipType = {
     type: "NAND" as ChipTypeID,
     inputs: 2,
     outputs: 1,
-    initialOutput: true,
-    pure: true
+    initialOutput: true
 };
 
 const chipTypes: Map<ChipTypeID, ChipType> = new Map([
